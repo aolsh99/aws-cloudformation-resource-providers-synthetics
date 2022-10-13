@@ -1,0 +1,242 @@
+{
+    "typeName":"AWS::Synthetics::NoCodeCanary",
+    "description":"Resource Type definition for AWS::Synthetics::NoCodeCanary",
+    "sourceUrl":"https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-synthetics",
+    "properties":{
+        "Name":{
+            "description":"Name of the NoCodeCanary.",
+            "type":"string",
+            "pattern":"^[0-9a-zA-Z_\\-]{1,255}$"
+        },
+        "Id":{
+            "description":"Id of the NoCodeCanary",
+            "type":"string"
+        },
+        "Arn":{
+            "description":"Arn of the NoCodeCanary",
+            "type":"string",
+            "pattern":"arn:[^:]*:[^:]*:[^:]*:[^:]*:.*"
+        },
+        "Schedule": {
+            "description": "Frequency to run your canaries",
+            "$ref" : "#/definitions/Schedule"
+        },
+        "EndpointList": {
+            "type" : "array",
+            "items" : {
+                "$ref" : "#/definitions/URL"
+            },
+            "maxItems": 1
+        },
+        "State": {
+            "type" : "string"
+        },
+        "NoCodeCanaryConfig": {
+            "$ref" : "#/definitions/NoCodeCanaryConfig"
+        },
+        "Tags": {
+            "type": "array",
+            "uniqueItems": false,
+            "items": {
+                "$ref": "#/definitions/Tag"
+            },
+            "minItems": 0
+        },
+        "StartNoCodeCanaryAfterCreation": {
+            "description": "Runs no-code canary if set to True. Default is False",
+            "type": "boolean"
+        }
+    },
+    "definitions": {
+        "NoCodeCanaryConfig": {
+            "type": "object",
+            "properties":{
+                "HttpConfig": {
+                    "$ref" : "#/definitions/HttpConfig"
+                }
+            },
+            "additionalProperties": false
+        },
+        "HttpConfig": {
+            "type": "object",
+            "properties": {
+                "Port": {
+                    "type": "integer"
+                },
+                "Hostname": {
+                    "type": "string"
+                },
+                "HttpMethod": {
+                    "type": "string"
+                },
+                "HttpHeaders": {
+                    "type": "array",
+                    "uniqueItems": false,
+                    "items": {
+                        "$ref": "#/definitions/HttpHeader"
+                    }
+                },
+                "HttpAssertions": {
+                    "type": "array",
+                    "uniqueItems": false,
+                    "items": {
+                        "$ref": "#/definitions/HttpAssertion"
+                    }
+                },
+                "UseIPv6": {
+                    "type": "boolean"
+                },
+                "RequestBody": {
+                    "type": "string"
+                },
+                "VerifyCert": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
+        "HttpHeader": {
+            "type": "object",
+            "patternProperties": {
+                "^.+$": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "HttpAssertion": {
+            "type": "object",
+            "properties": {
+                "CertDaysToExpiry": {
+                    "type": "integer"
+                },
+                "Body": {
+                    "$ref": "#/definitions/Body"
+                },
+                "MaximumLatencyInMillis": {
+                    "type": "integer"
+                },
+                "StatusCode": {
+                    "$ref": "#/definitions/StatusCode"
+                }
+            },
+            "additionalProperties": false
+        },
+        "StatusCode": {
+            "type": "object",
+            "properties": {
+                "Operator": {
+                    "type": "string"
+                },
+                "Value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "Body": {
+            "type": "object",
+            "properties": {
+                "Operator": {
+                    "type": "string"
+                },
+                "Values": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "Schedule" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "Expression" : {
+                    "type" : "string"
+                },
+                "DurationInSeconds" : {
+                    "type" : "string"
+                }
+            },
+            "required" : [ "Expression" ],
+            "additionalProperties": false
+        },
+        "URL": {
+            "type": "string",
+            "description": "NoCodeCanary URL"
+        },
+        "Tag": {
+            "description": "A key-value pair to associate with a resource.",
+            "additionalProperties" : false,
+            "type": "object",
+            "properties": {
+                "Key": {
+                    "type": "string",
+                    "description": "The key name of the tag. You can specify a value that is 1 to 127 Unicode characters in length and cannot be prefixed with aws:. You can use any of the following characters: the set of Unicode letters, digits, whitespace, _, ., /, =, +, and -. ",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^(?!aws:)([a-zA-Z\\d\\s_.:/=+\\-@]+)$"
+                },
+                "Value": {
+                    "type": "string",
+                    "description": "The value for the tag. You can specify a value that is 1 to 255 Unicode characters in length and cannot be prefixed with aws:. You can use any of the following characters: the set of Unicode letters, digits, whitespace, _, ., /, =, +, and -. ",
+                    "minLength": 0,
+                    "maxLength": 256,
+                    "pattern": "^([a-zA-Z\\d\\s_.:/=+\\-@]*)$"
+                }
+            },
+            "required": [
+                "Value",
+                "Key"
+            ]
+        }
+    },
+    "required":[
+        "Name"
+    ],
+    "handlers":{
+        "create":{
+            "permissions":[
+                "synthetics:CreateNoCodeCanary",
+                "synthetics:StartNoCodeCanary"
+            ]
+        },
+        "update":{
+            "permissions":[
+                "synthetics:UpdateNoCodeCanary",
+                "synthetics:StartNoCodeCanary",
+                "synthetics:StopNoCodeCanary",
+                "synthetics:TagResource",
+                "synthetics:UntagResource"
+            ]
+        },
+        "read":{
+            "permissions":[
+                "synthetics:GetNoCodeCanary",
+                "synthetics:DescribeNoCodeCanaries",
+                "synthetics:ListTagsForResource"
+            ]
+        },
+        "delete":{
+            "permissions":[
+                "synthetics:DeleteNoCodeCanary",
+                "synthetics:GetNoCodeCanary"
+            ]
+        },
+        "list":{
+            "permissions":[
+                "synthetics:ListNoCodeCanaries"
+            ]
+        }
+    },
+    "additionalProperties":false,
+    "createOnlyProperties":[
+        "/properties/Name"
+    ],
+    "primaryIdentifier":[
+        "/properties/Id"
+    ],
+    "readOnlyProperties":[
+        "/properties/Id",
+        "/properties/Arn"
+    ]
+}
