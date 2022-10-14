@@ -229,9 +229,9 @@ public class TagHelper {
      */
     public static Map<String, Map<String, String>> updateTags(ResourceModel model, Map<String, String> existingTags) {
         Map<String, String> modelTagMap = new HashMap<>();
-        List<Tag> modelTagList = model.getTags();
+        List<Tag> modelTagList = model.getTags() == null ? new ArrayList<>() : model.getTags();
         Set<Map.Entry<String, String>> modelTagsES = null;
-        Set<Map.Entry<String, String>> groupTags = null;
+        Set<Map.Entry<String, String>> noCodeCanaryTags = null;
         Set<Map.Entry<String, String>> modelTagsCopyES = null;
         Map<String, Map<String, String>> store = new HashMap<String, Map<String, String>>();
         Map<String, String> copyExistingTags = new HashMap<>(existingTags);
@@ -244,41 +244,41 @@ public class TagHelper {
             modelTagsCopyES = new HashSet<Map.Entry<String, String>>(modelTagMap.entrySet());
         }
 
-        groupTags = copyExistingTags.entrySet();
+        noCodeCanaryTags = copyExistingTags.entrySet();
 
         if (modelTagList == null) {
             return null;
         }
-        Set<Map.Entry<String, String>> finalGroupTags = groupTags;
+        Set<Map.Entry<String, String>> finalNoCodeCanaryTags = noCodeCanaryTags;
         // Get an iterator
         Iterator<Map.Entry<String, String>> modelIterator = modelTagsES.iterator();
         while (modelIterator.hasNext()) {
             Map.Entry<String, String> modelEntry = modelIterator.next();
-            if (finalGroupTags.contains(modelEntry)) {
+            if (finalNoCodeCanaryTags.contains(modelEntry)) {
                 modelIterator.remove();
             }
         }
         // Store all the tags that need to be added to the group
         store.put(Constants.ADD_TAGS, modelTagMap);
 
-        Iterator<Map.Entry<String, String>> groupTagIterator = finalGroupTags.iterator();
-        while (groupTagIterator.hasNext()) {
-            Map.Entry<String, String> canaryEntry = groupTagIterator.next();
+        Iterator<Map.Entry<String, String>> noCodeCanaryTagIterator = finalNoCodeCanaryTags.iterator();
+        while (noCodeCanaryTagIterator.hasNext()) {
+            Map.Entry<String, String> canaryEntry = noCodeCanaryTagIterator.next();
             try {
                 if (modelTagsCopyES.contains(canaryEntry)) {
-                    groupTagIterator.remove();
+                    noCodeCanaryTagIterator.remove();
                 }
                 if (canaryEntry.getKey().toString().startsWith("aws:")) {
-                    groupTagIterator.remove();
+                    noCodeCanaryTagIterator.remove();
                 }
                 if (!modelTagMap.isEmpty() && modelTagMap.containsKey(canaryEntry.getKey())) {
-                    groupTagIterator.remove();
+                    noCodeCanaryTagIterator.remove();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        // Store all the tags that need to be removed from the group
+        // Store all the tags that need to be removed from the no code canary
         store.put(Constants.REMOVE_TAGS, copyExistingTags);
         return store;
     }

@@ -1,0 +1,28 @@
+{
+  "CreateInputs": {
+    "Name": "test-no-code-canary",
+    "Schedule": {
+      "Expression": "rate(1 minute)",
+      "DurationInSeconds": "3600"
+    },
+    "EndpointList": [
+      "https://amzon.com"
+    ],
+    "NoCodeCanaryConfig": {
+      "HttpConfig": {
+        "Port": 443,
+        "HttpMethod": "GET",
+        "UseIPv6": true,
+        "VerifyCert": true
+      }
+    },
+    "Tags": [
+      {
+        "Key": "key001",
+        "Value": "value001"
+      }
+    ],
+    "StartCanaryAfterCreation": false
+  }
+}
+

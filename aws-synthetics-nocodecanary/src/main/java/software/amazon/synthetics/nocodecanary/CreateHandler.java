@@ -1,12 +1,8 @@
 package software.amazon.synthetics.nocodecanary;
 
 
-import software.amazon.awssdk.awscore.AwsResponse;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.services.synthetics.model.Canary;
 import software.amazon.awssdk.services.synthetics.model.CanaryState;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.proxy.*;
 import software.amazon.cloudformation.Action;
 import software.amazon.synthetics.nocodecanary.utils.Constants;
@@ -32,13 +28,6 @@ public class CreateHandler extends BaseHandlerStd {
                     Constants.CREATING_NO_CODE_CANARY_MSG,
                     Constants.MAX_RETRY_TIMES,
                     CanaryState.CREATING.toString());
-        } else if (canary.status().state() == CanaryState.ERROR) {
-            log(Constants.NO_CODE_CANARY_ERROR_STATE_MSG);
-            return ProgressEvent.failed(
-                    model,
-                    callbackContext,
-                    HandlerErrorCode.GeneralServiceException,
-                    Constants.NO_CODE_CANARY_ERROR_STATE_MSG);
         } else if (canary.status().state() == CanaryState.READY) {
             return handleNoCodeCanaryInStateReady(canary);
         } else if (canary.status().state() == CanaryState.STARTING) {

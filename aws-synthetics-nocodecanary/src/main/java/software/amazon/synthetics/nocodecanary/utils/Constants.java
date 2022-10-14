@@ -24,6 +24,8 @@ public class Constants {
     public static final String NO_CODE_CANARY_CONFLICT_STOPPING_MSG = "Caught ConflictException when trying to stop canary";
     public static final String NO_CODE_CANARY_ALREADY_UPDATING_MSG = "No-code canary is already updating";
     public static final String NO_CODE_CANARY_STATE_CREATING_UPDATE_MSG = "No-code canary is in state CREATING and cannot be updated";
+
+    public static final String NO_CODE_CANARY_STATE_DELETING_UPDATE_MSG = "No-code canary is in state DELETING and cannot be updated";
     public static final String NO_CODE_CANARY_STATE_STARTING_UPDATE_MSG = "No-code canary is in state STARTING. It must finish starting before it can be updated.";
     public static final String NO_CODE_CANARY_STATE_STOPPING_UPDATE_MSG = "No-code canary is in state STOPPING. It must finish stopping before it can be updated.";
     public static final String NO_CODE_CANARY_UPDATE_IN_PROGRESS_MSG = "Update in progress";

@@ -30,6 +30,14 @@ public class UpdateHandler extends BaseHandlerStd {
                         .errorCode(HandlerErrorCode.ResourceConflict)
                         .status(OperationStatus.FAILED)
                         .build();
+            } else if (canary.status().state() == CanaryState.DELETING) {
+                log(Constants.NO_CODE_CANARY_STATE_DELETING_UPDATE_MSG);
+                return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                        .message(Constants.NO_CODE_CANARY_STATE_DELETING_UPDATE_MSG)
+                        .resourceModel(model)
+                        .errorCode(HandlerErrorCode.ResourceConflict)
+                        .status(OperationStatus.FAILED)
+                        .build();
             } else if (canary.status().state() == CanaryState.UPDATING) {
                 log(Constants.NO_CODE_CANARY_ALREADY_UPDATING_MSG);
                 return ProgressEvent.<ResourceModel, CallbackContext>builder()
@@ -51,19 +59,14 @@ public class UpdateHandler extends BaseHandlerStd {
 
         if (canary.status().state() == CanaryState.UPDATING) {
             return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_UPDATE_IN_PROGRESS_MSG, Constants.MAX_RETRY_TIMES, CanaryState.UPDATING.toString());
-        } else if (canary.status().state() == CanaryState.ERROR) {
-            log(String.format("Canary is in state ERROR. %s", canary.status().stateReason()));
-            return ProgressEvent.failed(
-                    model,
-                    callbackContext,
-                    HandlerErrorCode.GeneralServiceException,
-                    canary.status().stateReason());
-        } else if (canary.status().state() == CanaryState.READY || canary.status().state() == CanaryState.STOPPED) {
-            return handleNoCodeCanaryInStateReadyOrStopped(canary);
+        } else if (canary.status().state() == CanaryState.READY) { //|| canary.status().state() == CanaryState.STOPPED) {
+            return handleNoCodeCanaryInStateReady(canary);
+            // return handleNoCodeCanaryInStateReadyOrStopped(canary);
         } else if (canary.status().state() == CanaryState.STARTING) {
             return handleNoCodeCanaryInStateStarting(canary);
-        } else if (canary.status().state() == CanaryState.RUNNING) {
-            return handleNoCodeCanaryInStateRunning(canary);
+        } else if (canary.status().state() == CanaryState.RUNNING || canary.status().state() == CanaryState.STOPPED ) {
+            return ProgressEvent.defaultSuccessHandler(Translator.constructModel(canary, model));
+            //return handleNoCodeCanaryInStateRunning(canary);
         } else if (canary.status().state() == CanaryState.STOPPING) {
             return waitingForNoCodeCanaryStateTransition(Constants.STOPPING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, CanaryState.STOPPING.toString());
         }
@@ -72,6 +75,20 @@ public class UpdateHandler extends BaseHandlerStd {
                 .resourceModel(model)
                 .status(OperationStatus.FAILED)
                 .build();
+    }
+
+    private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateReady(Canary canary) {
+        log(String.format("Canary is in state %s.", canary.status().stateAsString()));
+
+        if (model.getStartNoCodeCanaryAfterCreation()) {
+
+
+            // TODO: Call start no-code canary
+
+            return waitingForNoCodeCanaryStateTransition(Constants.STARTING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, CanaryState.READY.toString());
+        } else {
+            return ProgressEvent.defaultSuccessHandler(Translator.constructModel(canary, model));
+        }
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateReadyOrStopped(Canary canary) {
@@ -155,17 +172,17 @@ public class UpdateHandler extends BaseHandlerStd {
 
         try {
             // TODO: Send update canary request
-            if (model.getTags() != null) {
-                Map<String, Map<String, String>> tagResourceMap = TagHelper.updateTags(model, canary.tags());
-                String noCodeCanaryArn = ""; // TODO: get the arn
-                if (!tagResourceMap.get(Constants.ADD_TAGS).isEmpty()) {
-                    addTags(tagResourceMap, noCodeCanaryArn);
-                }
-
-                if (!tagResourceMap.get(Constants.REMOVE_TAGS).isEmpty()) {
-                    removeTags(tagResourceMap, noCodeCanaryArn);
-                }
+            //if (model.getTags() != null) {
+            Map<String, Map<String, String>> tagResourceMap = TagHelper.updateTags(model, canary.tags());
+            String noCodeCanaryArn = ""; // TODO: get the arn
+            if (!tagResourceMap.get(Constants.ADD_TAGS).isEmpty()) {
+                addTags(tagResourceMap, noCodeCanaryArn);
             }
+
+            if (!tagResourceMap.get(Constants.REMOVE_TAGS).isEmpty()) {
+                removeTags(tagResourceMap, noCodeCanaryArn);
+            }
+            //}
         }
         catch (final ValidationException e) {
             throw new CfnInvalidRequestException(e);
