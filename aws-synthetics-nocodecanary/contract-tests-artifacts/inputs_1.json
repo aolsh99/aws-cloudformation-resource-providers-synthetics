@@ -6,7 +6,7 @@
       "DurationInSeconds": "3600"
     },
     "EndpointList": [
-      "https://amzon.com"
+      "https://amazon.com"
     ],
     "NoCodeCanaryConfig": {
       "HttpConfig": {
@@ -23,6 +23,15 @@
       }
     ],
     "StartCanaryAfterCreation": false
-  }
+  },
+  "PatchInputs": [
+    {
+      "op": "replace",
+      "path": "EndpointList",
+      "value": [
+        "https://aws.amazon.com"
+      ]
+    }
+  ]
 }
 

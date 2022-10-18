@@ -1,9 +1,6 @@
 package software.amazon.synthetics.nocodecanary;
 
-import software.amazon.awssdk.services.synthetics.model.Canary;
-import software.amazon.awssdk.services.synthetics.model.CanaryState;
-import software.amazon.awssdk.services.synthetics.model.ConflictException;
-import software.amazon.awssdk.services.synthetics.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.synthetics.model.*;
 import software.amazon.cloudformation.Action;
 import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.*;
@@ -19,32 +16,32 @@ public class DeleteHandler extends BaseHandlerStd {
             return confirmNoCodeCanaryDeleted();
         }
 
-        Canary canary = getNoCodeCanaryOrThrow();
+        NoCodeCanary noCodeCanary = getNoCodeCanaryOrThrow();
 
-        if (canary.status().state() == CanaryState.CREATING) {
+        if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.CREATING) {
             log(Constants.NO_CODE_CANARY_IN_STATE_CREATING_DELETE_MSG);
             return ProgressEvent.<ResourceModel, CallbackContext>builder()
                     .message(Constants.NO_CODE_CANARY_IN_STATE_CREATING_DELETE_MSG)
                     .errorCode(HandlerErrorCode.ResourceConflict)
                     .status(OperationStatus.FAILED)
                     .build();
-        } else if (canary.status().state() == CanaryState.STARTING) {
+        } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.STARTING) {
             return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_IN_STATE_STARTING_DELETE_MSG, Constants.MAX_RETRY_TIMES, "STARTING");
-        } else if (canary.status().state() == CanaryState.UPDATING) {
+        } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.UPDATING) {
             return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_IN_STATE_UPDATING_DELETE_MSG, Constants.MAX_RETRY_TIMES, "UPDATING");
-        } else if (canary.status().state() == CanaryState.STOPPING) {
+        } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.STOPPING) {
             return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_IN_STATE_STOPPING_DELETE_MSG, Constants.MAX_RETRY_TIMES, "STOPPING");
-        } else if (canary.status().state() == CanaryState.RUNNING) {
-            return handleNoCodeCanaryInStateRunning(canary);
-        } else if (canary.status().state() == CanaryState.DELETING) {
+        } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.RUNNING) {
+            return handleNoCodeCanaryInStateRunning(noCodeCanary);
+        } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.DELETING) {
             return confirmNoCodeCanaryDeleted();
         } else {
-            return deleteNoCodeCanary(canary);
+            return deleteNoCodeCanary(noCodeCanary);
         }
 
     }
 
-    private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateRunning(Canary canary) {
+    private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateRunning(NoCodeCanary noCodeCanary) {
         try {
             // TODO: Make a call to stop no-code canary
 
@@ -54,7 +51,7 @@ public class DeleteHandler extends BaseHandlerStd {
         return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_IN_STATE_RUNNING_DELETE_MSG, Constants.MAX_RETRY_TIMES, "RUNNING");
     }
 
-    private ProgressEvent<ResourceModel, CallbackContext> deleteNoCodeCanary(Canary canary) {
+    private ProgressEvent<ResourceModel, CallbackContext> deleteNoCodeCanary(NoCodeCanary noCodeCanary) {
         // The canary will be deleted once DeleteCanary returns.
         log(Constants.NO_CODE_CANARY_DELETING_MSG);
         try {
@@ -67,7 +64,7 @@ public class DeleteHandler extends BaseHandlerStd {
             // are trying to delete it.
             throw new CfnResourceConflictException(
                     ResourceModel.TYPE_NAME,
-                    canary.name(),
+                    noCodeCanary.name(),
                     Constants.NO_CODE_CANARY_STATE_CHANGED_MSG,
                     e);
         }

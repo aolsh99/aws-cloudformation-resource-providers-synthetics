@@ -24,7 +24,7 @@ public class CallbackContext extends StdCallbackContext {
     private boolean noCodeCanaryDeleteStarted;
     private String retryKey;
     private int remainingRetryCount;
-    private CanaryState initialNoCodeCanaryState;
+    private NoCodeCanaryState initialNoCodeCanaryState;
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class CallbackContextBuilder {

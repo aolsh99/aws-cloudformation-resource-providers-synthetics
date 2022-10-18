@@ -2,6 +2,7 @@ package software.amazon.synthetics.nocodecanary;
 
 import software.amazon.awssdk.services.synthetics.SyntheticsClient;
 import software.amazon.awssdk.services.synthetics.model.Canary;
+import software.amazon.awssdk.services.synthetics.model.NoCodeCanary;
 import software.amazon.cloudformation.Action;
 import software.amazon.cloudformation.proxy.*;
 import software.amazon.synthetics.nocodecanary.utils.Constants;
@@ -47,10 +48,10 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     return response;
   }
 
-  protected Canary getNoCodeCanaryOrThrow() {
+  protected NoCodeCanary getNoCodeCanaryOrThrow() {
     return NoCodeCanaryHelper.getNoCodeCanaryOrThrow(proxy, syntheticsClient, model);
   }
-  protected Canary getNoCodeCanaryOrNull() {
+  protected NoCodeCanary getNoCodeCanaryOrNull() {
     return NoCodeCanaryHelper.getNoCodeCanaryOrNull(proxy, syntheticsClient, model.getName());
   }
 

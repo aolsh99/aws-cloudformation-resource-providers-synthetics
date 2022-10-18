@@ -1,16 +1,13 @@
 package software.amazon.synthetics.nocodecanary;
 
 import software.amazon.awssdk.services.synthetics.SyntheticsClient;
-import software.amazon.awssdk.services.synthetics.model.Canary;
-import software.amazon.awssdk.services.synthetics.model.GetCanaryRequest;
-import software.amazon.awssdk.services.synthetics.model.GetCanaryResponse;
-import software.amazon.awssdk.services.synthetics.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.synthetics.model.*;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 
 public class NoCodeCanaryHelper {
 
-    public static Canary getNoCodeCanaryOrNull(AmazonWebServicesClientProxy proxy,
+    public static NoCodeCanary getNoCodeCanaryOrNull(AmazonWebServicesClientProxy proxy,
                                          SyntheticsClient syntheticsClient,
                                          String canaryName) {
         try {
@@ -19,12 +16,12 @@ public class NoCodeCanaryHelper {
             return null;
         }
     }
-    public static Canary getNoCodeCanaryOrThrow(AmazonWebServicesClientProxy proxy,
+    public static NoCodeCanary getNoCodeCanaryOrThrow(AmazonWebServicesClientProxy proxy,
                                           SyntheticsClient syntheticsClient,
                                           ResourceModel model) {
         return getNoCodeCanaryOrThrow(proxy, syntheticsClient, model.getName());
     }
-    public static Canary getNoCodeCanaryOrThrow(AmazonWebServicesClientProxy proxy,
+    public static NoCodeCanary getNoCodeCanaryOrThrow(AmazonWebServicesClientProxy proxy,
                                           SyntheticsClient syntheticsClient,
                                           String canaryName) {
         try {
@@ -34,14 +31,14 @@ public class NoCodeCanaryHelper {
         }
     }
 
-    private static Canary getNoCodeCanary(AmazonWebServicesClientProxy proxy,
+    private static NoCodeCanary getNoCodeCanary(AmazonWebServicesClientProxy proxy,
                                     SyntheticsClient syntheticsClient,
                                     String canaryName) {
-        GetCanaryResponse response = proxy.injectCredentialsAndInvokeV2(
-                GetCanaryRequest.builder()
-                        .name(canaryName)
+        GetNoCodeCanaryResponse response = proxy.injectCredentialsAndInvokeV2(
+                GetNoCodeCanaryRequest.builder()
+                        .noCodeCanaryIdentifier(canaryName)
                         .build(),
-                syntheticsClient::getCanary);  // TODO: change to no code canary api
-        return response.canary();
+                syntheticsClient::getNoCodeCanary);
+        return response.noCodeCanary();
     }
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.services.synthetics.model.Canary;
+import software.amazon.awssdk.services.synthetics.model.NoCodeCanary;
 
 import java.util.Collection;
 import java.util.List;
@@ -27,7 +28,7 @@ public class Translator {
    * @param model resource model
    * @return awsRequest the aws service request to create a resource
    */
-  public static ResourceModel constructModel(Canary canary, ResourceModel model) {
+  public static ResourceModel constructModel(NoCodeCanary noCodeCanary, ResourceModel model) {
     // TODO: update model
     return null;
   }
