@@ -1,10 +1,10 @@
 package software.amazon.synthetics.nocodecanary;
 
 
-import software.amazon.awssdk.services.synthetics.model.Canary;
-import software.amazon.awssdk.services.synthetics.model.CanaryState;
-import software.amazon.awssdk.services.synthetics.model.NoCodeCanary;
-import software.amazon.awssdk.services.synthetics.model.NoCodeCanaryState;
+import software.amazon.awssdk.services.synthetics.model.*;
+import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
+import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.*;
 import software.amazon.cloudformation.Action;
 import software.amazon.synthetics.nocodecanary.utils.Constants;
@@ -44,8 +44,12 @@ public class CreateHandler extends BaseHandlerStd {
     private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateReady(NoCodeCanary noCodeCanary) {
         log(Constants.NO_CODE_CANARY_IN_STATE_READY_MSG);
         if (model.getStartNoCodeCanaryAfterCreation()) {
-            // TODO: Send start no-code canary request
-            return waitingForNoCodeCanaryStateTransition(Constants.STARTING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, "READY");
+            proxy.injectCredentialsAndInvokeV2(
+                    StartNoCodeCanaryRequest.builder()
+                            .noCodeCanaryIdentifier(noCodeCanary.name())
+                            .build(),
+                    syntheticsClient::startNoCodeCanary);
+            return waitingForNoCodeCanaryStateTransition(Constants.STARTING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.READY.toString());
         } else {
             return ProgressEvent.defaultSuccessHandler(Translator.constructModel(noCodeCanary, model));
         }
@@ -67,8 +71,21 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> createNoCodeCanary() {
-        // TODO: build request from model
-        // TODO: send api call
+        // TODO: Add other fields
+        final CreateNoCodeCanaryRequest createNoCodeCanaryRequest = CreateNoCodeCanaryRequest.builder()
+                .name(model.getName())
+                .build();
+        try {
+            proxy.injectCredentialsAndInvokeV2(createNoCodeCanaryRequest, syntheticsClient::createNoCodeCanary);
+        } catch (final ValidationException e) {
+            if ( e.getMessage().contains("Canary name already exists") ) {
+                throw new CfnAlreadyExistsException(ResourceModel.TYPE_NAME, e.getMessage(), e);
+            } else {
+                throw new CfnInvalidRequestException(e.getMessage());
+            }
+        } catch (final Exception e) {
+            throw new CfnGeneralServiceException(e.getMessage());
+        }
         callbackContext.setNoCodeCanaryCreateStarted(true);
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
                 .callbackContext(callbackContext)

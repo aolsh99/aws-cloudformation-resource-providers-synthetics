@@ -43,8 +43,11 @@ public class DeleteHandler extends BaseHandlerStd {
 
     private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateRunning(NoCodeCanary noCodeCanary) {
         try {
-            // TODO: Make a call to stop no-code canary
-
+            proxy.injectCredentialsAndInvokeV2(
+                    StopNoCodeCanaryRequest.builder()
+                            .noCodeCanaryIdentifier(noCodeCanary.name())
+                            .build(),
+                    syntheticsClient::stopNoCodeCanary);
         } catch (ConflictException e) {
             log(Constants.NO_CODE_CANARY_CONFLICT_STOPPING_MSG);
         }
@@ -55,7 +58,11 @@ public class DeleteHandler extends BaseHandlerStd {
         // The canary will be deleted once DeleteCanary returns.
         log(Constants.NO_CODE_CANARY_DELETING_MSG);
         try {
-            // TODO: Make a call to delete no-code canary
+            proxy.injectCredentialsAndInvokeV2(
+                    DeleteNoCodeCanaryRequest.builder()
+                            .noCodeCanaryIdentifier(noCodeCanary.name())
+                            .build(),
+                    syntheticsClient::deleteNoCodeCanary);
         } catch (ResourceNotFoundException e) {
             // Handle race condition where an external process calls DeleteCanary before we do.
             return ProgressEvent.defaultSuccessHandler(null);

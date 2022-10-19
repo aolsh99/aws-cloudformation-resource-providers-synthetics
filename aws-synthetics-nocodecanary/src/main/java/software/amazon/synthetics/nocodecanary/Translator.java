@@ -3,14 +3,10 @@ package software.amazon.synthetics.nocodecanary;
 import com.google.common.collect.Lists;
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
-import software.amazon.awssdk.services.synthetics.model.Canary;
-import software.amazon.awssdk.services.synthetics.model.NoCodeCanary;
+import software.amazon.awssdk.services.synthetics.model.*;
+import software.amazon.awssdk.services.synthetics.model.NoCodeCanary.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,13 +19,44 @@ import java.util.stream.Stream;
 
 public class Translator {
 
-  /**
-   * Request to create a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to create a resource
-   */
+
   public static ResourceModel constructModel(NoCodeCanary noCodeCanary, ResourceModel model) {
-    // TODO: update model
+    // TODO: Check the fields
+    List<String> endpoints = new ArrayList<>();
+    endpoints.add(noCodeCanary.endpoint());
+    model.setArn(noCodeCanary.arn());
+    model.setEndpointList(endpoints);
+    model.setState(noCodeCanary.noCodeCanaryStateAsString());
+    model.setName(noCodeCanary.name());
+    model.setSchedule(buildSchedule(noCodeCanary.schedule()));
+    model.setNoCodeCanaryConfig(buildNoCodeCanaryConfig(noCodeCanary.httpConfig()));
+    return model;
+  }
+
+  public static ResourceModel constructModelFromSummary(NoCodeCanarySummary noCodeCanarySummary, ResourceModel model) {
+    // TODO: Check the fields
+    List<String> endpoints = new ArrayList<>();
+    endpoints.add(noCodeCanarySummary.endpoint());
+    model.setArn(noCodeCanarySummary.arn());
+    model.setEndpointList(endpoints);
+    model.setState(noCodeCanarySummary.stateAsString());
+    model.setId(noCodeCanarySummary.id());
+    model.setName(noCodeCanarySummary.name());
+    model.setSchedule(buildSchedule(noCodeCanarySummary.schedule()));
+    return model;
+  }
+
+  public static Schedule buildSchedule(NoCodeCanarySchedule schedule) {
+    Schedule result = new Schedule();
+    result.setExpression(schedule.expression());
+    result.setDurationInSeconds(schedule.durationInSeconds().toString());
+    return result;
+  }
+
+  public static NoCodeCanaryConfig buildNoCodeCanaryConfig(software.amazon.awssdk.services.synthetics.model.HttpConfig httpConfig) {
+    // TODO: Convert config
+
+    //return new NoCodeCanaryConfig(httpConfig);
     return null;
   }
 
@@ -109,11 +136,8 @@ public class Translator {
    * @param nextToken token passed to the aws service list resources request
    * @return awsRequest the aws service request to list resources within aws account
    */
-  static AwsRequest translateToListRequest(final String nextToken) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L26-L31
-    return awsRequest;
+  static ListNoCodeCanariesRequest translateToListRequest(final String nextToken) {
+    return ListNoCodeCanariesRequest.builder().nextToken(nextToken).build();
   }
 
   /**

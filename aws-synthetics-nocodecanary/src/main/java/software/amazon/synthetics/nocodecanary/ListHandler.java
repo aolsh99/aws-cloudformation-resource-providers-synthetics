@@ -2,6 +2,8 @@ package software.amazon.synthetics.nocodecanary;
 
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.services.synthetics.model.ListNoCodeCanariesRequest;
+import software.amazon.awssdk.services.synthetics.model.ListNoCodeCanariesResponse;
 import software.amazon.awssdk.services.synthetics.model.SyntheticsException;
 import software.amazon.awssdk.services.synthetics.model.ValidationException;
 import software.amazon.cloudformation.Action;
@@ -31,11 +33,18 @@ public class ListHandler extends BaseHandlerStd {
     private List<ResourceModel> listAllNoCodeCanaries() {
         List<ResourceModel> models = new ArrayList<>();
         // construct a body of a request
-        final AwsRequest listNoCodeCanariesRequest = Translator.translateToListRequest(request.getNextToken());
-
+        final ListNoCodeCanariesRequest listNoCodeCanariesRequest = Translator.translateToListRequest(request.getNextToken());
+        final ListNoCodeCanariesResponse listNoCodeCanariesResponse;
         try {
             // TODO: Get all no-code canaries summaries
             // TODO: Build models
+            listNoCodeCanariesResponse = proxy.injectCredentialsAndInvokeV2(listNoCodeCanariesRequest, syntheticsClient::listNoCodeCanaries);
+
+            listNoCodeCanariesResponse.noCodeCanaries().forEach(noCodeCanarySummary -> {
+                ResourceModel model = ResourceModel.builder().build();
+                model = Translator.constructModelFromSummary(noCodeCanarySummary, model);
+                models.add(model);
+            });
         } catch (ValidationException ex) {
             log(ex);
             throw new CfnInvalidRequestException(ex);
@@ -43,7 +52,7 @@ public class ListHandler extends BaseHandlerStd {
             log(ex);
             throw new CfnGeneralServiceException(ex);
         }
-        // TODO: Set the next token
+        request.setNextToken(listNoCodeCanariesResponse.nextToken());
         return models;
     }
 }

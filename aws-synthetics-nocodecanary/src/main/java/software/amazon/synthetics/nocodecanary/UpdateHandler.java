@@ -61,12 +61,10 @@ public class UpdateHandler extends BaseHandlerStd {
             return waitingForNoCodeCanaryStateTransition(Constants.NO_CODE_CANARY_UPDATE_IN_PROGRESS_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.UPDATING.toString());
         } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.READY) { //|| canary.status().state() == CanaryState.STOPPED) {
             return handleNoCodeCanaryInStateReady(noCodeCanary);
-            // return handleNoCodeCanaryInStateReadyOrStopped(canary);
         } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.STARTING) {
             return handleNoCodeCanaryInStateStarting(noCodeCanary);
         } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.RUNNING || noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.STOPPED ) {
             return ProgressEvent.defaultSuccessHandler(Translator.constructModel(noCodeCanary, model));
-            //return handleNoCodeCanaryInStateRunning(canary);
         } else if (noCodeCanary.noCodeCanaryState() == NoCodeCanaryState.STOPPING) {
             return waitingForNoCodeCanaryStateTransition(Constants.STOPPING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.STOPPING.toString());
         }
@@ -81,44 +79,16 @@ public class UpdateHandler extends BaseHandlerStd {
         log(String.format("Canary is in state %s.", noCodeCanary.noCodeCanaryStateAsString()));
 
         if (model.getStartNoCodeCanaryAfterCreation()) {
-
-
-            // TODO: Call start no-code canary
-
+            proxy.injectCredentialsAndInvokeV2(
+                    StartNoCodeCanaryRequest.builder()
+                            .noCodeCanaryIdentifier(noCodeCanary.name())
+                            .build(),
+                    syntheticsClient::startNoCodeCanary);
             return waitingForNoCodeCanaryStateTransition(Constants.STARTING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.READY.toString());
         } else {
             return ProgressEvent.defaultSuccessHandler(Translator.constructModel(noCodeCanary, model));
         }
     }
-
-//    private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateReadyOrStopped(Canary canary) {
-//        log(String.format("Canary is in state %s.", canary.status().stateAsString()));
-//
-//        // After an update, If canary is in READY or STOPPED state with stateReason message, it indicates that update has failed.
-//        // 1. If the canary was initially in READY or STOPPED state and there was an error during provisioning,
-//        // then it will be set to READY or STOPPED state again and the message
-//        // will be in the StateReason field.
-//        // 2. A canary initially in Running state can also be set to state STOPPED if it was a run once canary and update failed but meanwhile canary execution has come to an end.
-//        // TODO: Check this logic
-//        if (!Strings.isNullOrEmpty(canary.status().stateReason())) {
-//            log(String.format("Update failed: %s", canary.status().stateReason()));
-//            return ProgressEvent.failed(
-//                    model,
-//                    callbackContext,
-//                    HandlerErrorCode.GeneralServiceException,
-//                    canary.status().stateReason());
-//        }
-//
-//        if (model.getStartNoCodeCanaryAfterCreation()) {
-//
-//
-//            // TODO: Call start no-code canary
-//
-//            return waitingForNoCodeCanaryStateTransition(Constants.STARTING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.READY.toString());
-//        } else {
-//            return ProgressEvent.defaultSuccessHandler(Translator.constructModel(canary, model));
-//        }
-//    }
 
     private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateStarting(NoCodeCanary noCodeCanary) {
         // If the customer calls StartCanary before we handle the canary in READY or
@@ -135,43 +105,14 @@ public class UpdateHandler extends BaseHandlerStd {
         }
     }
 
-//    private ProgressEvent<ResourceModel, CallbackContext> handleNoCodeCanaryInStateRunning(Canary canary) {
-//        log(Constants.NO_CODE_CANARY_IN_STATE_RUNNING_MSG);
-//
-//        if (callbackContext.getInitialNoCodeCanaryState() == NoCodeCanaryState.RUNNING) {
-//            // If the canary was initially in state RUNNING and there was an error
-//            // during provisioning, then it will be set to RUNNING again and the message
-//            // will be in the StateReason field.
-//            // TODO: Come back to this code
-//            if (!Strings.isNullOrEmpty(canary.status().stateReason())) {
-//                log(String.format("Update failed: %s", canary.status().stateReason()));
-//                return ProgressEvent.failed(
-//                        model,
-//                        callbackContext,
-//                        HandlerErrorCode.GeneralServiceException,
-//                        canary.status().stateReason());
-//            }
-//
-//            // If the canary was initially in state RUNNING and StartCanaryAfterCreation is
-//            // false, we should stop the canary.
-//            if (!model.getStartNoCodeCanaryAfterCreation()) {
-//                // There is a race condition here. We will get an exception if someone calls
-//                // DeleteCanary, StopCanary, or UpdateCanary before we call StopCanary.
-//                // TODO: Send request to stop no-code canary
-//
-//                return waitingForNoCodeCanaryStateTransition(Constants.STOPPING_NO_CODE_CANARY_MSG, Constants.MAX_RETRY_TIMES, NoCodeCanaryState.RUNNING.toString());
-//            }
-//        }
-//
-//        return ProgressEvent.defaultSuccessHandler(Translator.constructModel(canary, model));
-//    }
-
     private ProgressEvent<ResourceModel, CallbackContext> updateNoCodeCanary(NoCodeCanary noCodeCanary) {
         // TODO: Build no-code canary update request
         // TODO: Check what fields need to be updated by comparing no-code canary and model
-
+        final UpdateNoCodeCanaryRequest updateNoCodeCanaryRequest = UpdateNoCodeCanaryRequest.builder()
+                .noCodeCanaryIdentifier(noCodeCanary.name())
+                .build();
         try {
-            // TODO: Send update canary request
+            proxy.injectCredentialsAndInvokeV2(updateNoCodeCanaryRequest, syntheticsClient::updateNoCodeCanary);
             // TODO: Need to add tags to the model
             //if (model.getTags() != null) {
 //            Map<String, Map<String, String>> tagResourceMap = TagHelper.updateTags(model, noCodeCanary.tags());
