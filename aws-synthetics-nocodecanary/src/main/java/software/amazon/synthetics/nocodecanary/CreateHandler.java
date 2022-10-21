@@ -71,7 +71,10 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> createNoCodeCanary() {
-        // TODO: Add other fields
+
+        TagHelper.convertToSet(TagHelper.generateTagsForCreate(model, request)); // generate tags for create
+
+        // TODO: Add other fields, and add tags
         final CreateNoCodeCanaryRequest createNoCodeCanaryRequest = CreateNoCodeCanaryRequest.builder()
                 .name(model.getName())
                 .build();

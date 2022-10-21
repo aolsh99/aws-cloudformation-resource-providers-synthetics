@@ -12,6 +12,7 @@ import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.*;
 import software.amazon.synthetics.nocodecanary.utils.Constants;
 
+import javax.swing.text.html.HTML;
 import java.util.Map;
 
 public class UpdateHandler extends BaseHandlerStd {
@@ -113,18 +114,16 @@ public class UpdateHandler extends BaseHandlerStd {
                 .build();
         try {
             proxy.injectCredentialsAndInvokeV2(updateNoCodeCanaryRequest, syntheticsClient::updateNoCodeCanary);
-            // TODO: Need to add tags to the model
-            //if (model.getTags() != null) {
-//            Map<String, Map<String, String>> tagResourceMap = TagHelper.updateTags(model, noCodeCanary.tags());
-//            String noCodeCanaryArn = ""; // TODO: get the arn
-//            if (!tagResourceMap.get(Constants.ADD_TAGS).isEmpty()) {
-//                addTags(tagResourceMap, noCodeCanaryArn);
-//            }
-//
-//            if (!tagResourceMap.get(Constants.REMOVE_TAGS).isEmpty()) {
-//                removeTags(tagResourceMap, noCodeCanaryArn);
-//            }
-            //}
+            if (TagHelper.shouldUpdateTags(model, request)) {
+
+                // get previous and new tags
+                Map<String, String> newTags = TagHelper.getNewDesiredTags(model, request);
+                Map<String, String> prevTags = TagHelper.getPreviouslyAttachedTags(request);
+
+                // add nd remove tags
+                addTags(TagHelper.generateTagsToAdd(prevTags, newTags), model.getArn());
+                removeTags(TagHelper.generateTagsToRemove(prevTags, newTags), model.getArn());
+            }
         }
         catch (final ValidationException e) {
             throw new CfnInvalidRequestException(e);
@@ -141,15 +140,15 @@ public class UpdateHandler extends BaseHandlerStd {
 
     /**
      * Wrapper around tagResource call for Synthetics api and handle response/ error
-     * @param tagResourceMap
+     * @param tagsToAdd
      * @param noCodeCanaryArn
      */
-    private void addTags(Map<String, Map<String, String>> tagResourceMap, String noCodeCanaryArn) {
+    private void addTags(Map<String, String> tagsToAdd, String noCodeCanaryArn) {
         try {
             log(Constants.TAG_RESOURCE_CALL);
             TagResourceRequest tagResourceRequest = TagResourceRequest.builder()
                     .resourceArn(noCodeCanaryArn)
-                    .tags(tagResourceMap.get(Constants.ADD_TAGS))
+                    .tags(tagsToAdd)
                     .build();
             proxy.injectCredentialsAndInvokeV2(tagResourceRequest, syntheticsClient::tagResource);
         } catch (BadRequestException | TooManyRequestsException | ConflictException | InternalFailureException e) {
@@ -161,15 +160,15 @@ public class UpdateHandler extends BaseHandlerStd {
 
     /**
      * Wrapper around untagResource call for Synthetics api and handle response/ error
-     * @param tagResourceMap
+     * @param tagsToRemove
      * @param noCodeCanaryArn
      */
-    private void removeTags(Map<String, Map<String, String>> tagResourceMap, String noCodeCanaryArn) {
+    private void removeTags(Map<String, String> tagsToRemove, String noCodeCanaryArn) {
         try {
             log(Constants.UNTAG_RESOURCE_CALL);
             UntagResourceRequest untagResourceRequest = UntagResourceRequest.builder()
                     .resourceArn(noCodeCanaryArn)
-                    .tagKeys(tagResourceMap.get(Constants.REMOVE_TAGS).keySet())
+                    .tagKeys(tagsToRemove.keySet())
                     .build();
             proxy.injectCredentialsAndInvokeV2(untagResourceRequest, syntheticsClient::untagResource);
         } catch (BadRequestException | TooManyRequestsException | ConflictException | InternalFailureException e) {

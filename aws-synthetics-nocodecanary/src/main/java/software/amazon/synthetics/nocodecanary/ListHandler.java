@@ -36,13 +36,11 @@ public class ListHandler extends BaseHandlerStd {
         final ListNoCodeCanariesRequest listNoCodeCanariesRequest = Translator.translateToListRequest(request.getNextToken());
         final ListNoCodeCanariesResponse listNoCodeCanariesResponse;
         try {
-            // TODO: Get all no-code canaries summaries
-            // TODO: Build models
             listNoCodeCanariesResponse = proxy.injectCredentialsAndInvokeV2(listNoCodeCanariesRequest, syntheticsClient::listNoCodeCanaries);
 
             listNoCodeCanariesResponse.noCodeCanaries().forEach(noCodeCanarySummary -> {
                 ResourceModel model = ResourceModel.builder().build();
-                model = Translator.constructModelFromSummary(noCodeCanarySummary, model);
+                Translator.constructModelFromSummary(noCodeCanarySummary, model);
                 models.add(model);
             });
         } catch (ValidationException ex) {

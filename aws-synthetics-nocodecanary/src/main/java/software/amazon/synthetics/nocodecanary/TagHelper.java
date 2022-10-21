@@ -9,6 +9,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.core.SdkClient;
+import software.amazon.awssdk.services.synthetics.model.*;
+import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -69,7 +72,7 @@ public class TagHelper {
      * Generate tags to put into resource creation request.
      * This includes user defined tags and system tags as well.
      */
-    public final Map<String, String> generateTagsForCreate(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
+    public static Map<String, String> generateTagsForCreate(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
         final Map<String, String> tagMap = new HashMap<>();
 
         // merge system tags with desired resource tags if your service supports CloudFormation system tags
@@ -78,9 +81,7 @@ public class TagHelper {
         if (handlerRequest.getDesiredResourceTags() != null) {
             tagMap.putAll(handlerRequest.getDesiredResourceTags());
         }
-
-        // TODO: get tags from resource model based on your tag property name
-        // TODO: tagMap.putAll(convertToMap(resourceModel.getTags()));
+        tagMap.putAll(convertToMap(resourceModel.getTags())); // getting tags from model
         return Collections.unmodifiableMap(tagMap);
     }
 
@@ -89,7 +90,7 @@ public class TagHelper {
      *
      * Determines whether user defined tags have been changed during update.
      */
-    public final boolean shouldUpdateTags(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
+    public static boolean shouldUpdateTags(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
         final Map<String, String> previousTags = getPreviouslyAttachedTags(handlerRequest);
         final Map<String, String> desiredTags = getNewDesiredTags(resourceModel, handlerRequest);
         return ObjectUtils.notEqual(previousTags, desiredTags);
@@ -102,13 +103,12 @@ public class TagHelper {
      * we will get previous attached user defined tags from both handlerRequest.getPreviousResourceTags (stack tags)
      * and handlerRequest.getPreviousResourceState (resource tags).
      */
-    public Map<String, String> getPreviouslyAttachedTags(final ResourceHandlerRequest<ResourceModel> handlerRequest) {
+    public static Map<String, String> getPreviouslyAttachedTags(final ResourceHandlerRequest<ResourceModel> handlerRequest) {
         // get previous stack level tags from handlerRequest
         final Map<String, String> previousTags = handlerRequest.getPreviousResourceTags() != null ?
             handlerRequest.getPreviousResourceTags() : Collections.emptyMap();
-
-        // TODO: get resource level tags from previous resource state based on your tag property name
-        // TODO: previousTags.putAll(handlerRequest.getPreviousResourceState().getTags());
+        // resource tags
+        previousTags.putAll(convertToMap(handlerRequest.getPreviousResourceState().getTags()));
         return previousTags;
     }
 
@@ -118,13 +118,12 @@ public class TagHelper {
      * If stack tags and resource tags are not merged together in Configuration class,
      * we will get new user defined tags from both resource model and previous stack tags.
      */
-    public Map<String, String> getNewDesiredTags(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
+    public static Map<String, String> getNewDesiredTags(final ResourceModel resourceModel, final ResourceHandlerRequest<ResourceModel> handlerRequest) {
         // get new stack level tags from handlerRequest
         final Map<String, String> desiredTags = handlerRequest.getDesiredResourceTags() != null ?
             handlerRequest.getDesiredResourceTags() : Collections.emptyMap();
 
-        // TODO: get resource level tags from resource model based on your tag property name
-        // TODO: desiredTags.putAll(convertToMap(resourceModel.getTags()));
+        desiredTags.putAll(convertToMap(resourceModel.getTags()));
         return desiredTags;
     }
 
@@ -133,7 +132,7 @@ public class TagHelper {
      *
      * Determines the tags the customer desired to define or redefine.
      */
-    public Map<String, String> generateTagsToAdd(final Map<String, String> previousTags, final Map<String, String> desiredTags) {
+    public static Map<String, String> generateTagsToAdd(final Map<String, String> previousTags, final Map<String, String> desiredTags) {
         return desiredTags.entrySet().stream()
             .filter(e -> !previousTags.containsKey(e.getKey()) || !Objects.equals(previousTags.get(e.getKey()), e.getValue()))
             .collect(Collectors.toMap(
@@ -146,12 +145,14 @@ public class TagHelper {
      *
      * Determines the tags the customer desired to remove from the function.
      */
-    public Set<String> generateTagsToRemove(final Map<String, String> previousTags, final Map<String, String> desiredTags) {
+    public static Map<String, String> generateTagsToRemove(final Map<String, String> previousTags, final Map<String, String> desiredTags) {
         final Set<String> desiredTagNames = desiredTags.keySet();
 
-        return previousTags.keySet().stream()
-            .filter(tagName -> !desiredTagNames.contains(tagName))
-            .collect(Collectors.toSet());
+        return previousTags.entrySet().stream()
+            .filter(e -> !desiredTagNames.contains(e.getKey()))
+            .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue));
     }
 
     /**
@@ -173,53 +174,9 @@ public class TagHelper {
     }
 
 
-    /**
-     * tagResource during update
-     *
-     * Calls the service:TagResource API.
-     */
-    private ProgressEvent<ResourceModel, CallbackContext>
-    tagResource(final AmazonWebServicesClientProxy proxy, final ProxyClient<SdkClient> serviceClient, final ResourceModel resourceModel,
-                final ResourceHandlerRequest<ResourceModel> handlerRequest, final CallbackContext callbackContext, final Map<String, String> addedTags, final Logger logger) {
-        // TODO: add log for adding tags to resources during update
-        // e.g. logger.log(String.format("[UPDATE][IN PROGRESS] Going to add tags for ... resource: %s with AccountId: %s",
-        // resourceModel.getResourceName(), handlerRequest.getAwsAccountId()));
 
-        // TODO: change untagResource in the method to your service API according to your SDK
-        return proxy.initiate("AWS-Synthetics-NoCodeCanary::TagOps", serviceClient, resourceModel, callbackContext)
-            .translateToServiceRequest(model ->
-                Translator.tagResourceRequest(model, addedTags))
-            .makeServiceCall((request, client) -> {
-                return (AwsResponse) null;
-                // TODO: replace the return null with your invoke log to call tagResource API to add tags
-                // e.g. proxy.injectCredentialsAndInvokeV2(request, client.client()::tagResource))
-            })
-            .progress();
-    }
 
-    /**
-     * untagResource during update
-     *
-     * Calls the service:UntagResource API.
-     */
-    private ProgressEvent<ResourceModel, CallbackContext>
-    untagResource(final AmazonWebServicesClientProxy proxy, final ProxyClient<SdkClient> serviceClient, final ResourceModel resourceModel,
-                  final ResourceHandlerRequest<ResourceModel> handlerRequest, final CallbackContext callbackContext, final Set<String> removedTags, final Logger logger) {
-        // TODO: add log for removing tags from resources during update
-        // e.g. logger.log(String.format("[UPDATE][IN PROGRESS] Going to remove tags for ... resource: %s with AccountId: %s",
-        // resourceModel.getResourceName(), handlerRequest.getAwsAccountId()));
 
-        // TODO: change untagResource in the method to your service API according to your SDK
-        return proxy.initiate("AWS-Synthetics-NoCodeCanary::TagOps", serviceClient, resourceModel, callbackContext)
-            .translateToServiceRequest(model ->
-                Translator.untagResourceRequest(model, removedTags))
-            .makeServiceCall((request, client) -> {
-                return (AwsResponse) null;
-                // TODO: replace the return null with your invoke log to call untag API to remove tags
-                // e.g. proxy.injectCredentialsAndInvokeV2(request, client.client()::untagResource)
-            })
-            .progress();
-    }
 
     /**
      * Method to determine if the tags changed and return the tags to add and remove
